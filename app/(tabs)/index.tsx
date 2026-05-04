@@ -1,98 +1,125 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useState, useRef } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  StatusBar,
+  Animated,       // ← new import
+} from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+type Quote = {
+  text: string;
+  author: string;
+};
 
-export default function HomeScreen() {
+const quotes: Quote[] = [
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Life is what happens when you're busy making other plans.", author: "John Lennon" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+  { text: "Whether you think you can or can't, you're right.", author: "Henry Ford" },
+];
+
+export default function App() {
+  const [quote, setQuote] = useState<Quote>(quotes[0]);
+
+  // ── Animation value (starts fully visible at 1) ──────────────
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  function getNewQuote(): void {
+    // Step 1: Fade OUT
+    Animated.timing(fadeAnim, {
+      toValue: 0,           // fade to invisible
+      duration: 300,        // takes 300ms
+      useNativeDriver: true,
+    }).start(() => {
+
+      // Step 2: Swap the quote (while invisible)
+      let random: Quote;
+      do {
+        random = quotes[Math.floor(Math.random() * quotes.length)];
+      } while (random.text === quote.text);
+      setQuote(random);
+
+      // Step 3: Fade IN
+      Animated.timing(fadeAnim, {
+        toValue: 1,           // fade back to visible
+        duration: 400,        // slightly slower fade in
+        useNativeDriver: true,
+      }).start();
+
+    });
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* Animated.View wraps the card so the whole card fades */}
+      <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
+        <Text style={styles.quoteMark}>"</Text>
+        <Text style={styles.quoteText}>{quote.text}</Text>
+        <Text style={styles.author}>— {quote.author}</Text>
+      </Animated.View>
+
+      <TouchableOpacity style={styles.button} onPress={getNewQuote}>
+        <Text style={styles.buttonText}>New Quote</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f0',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    padding: 24,
   },
-  stepContainer: {
-    gap: 8,
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 28,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    marginBottom: 24,
+  },
+  quoteMark: {
+    fontSize: 48,
+    color: '#cccccc',
+    lineHeight: 48,
     marginBottom: 8,
+    fontFamily: 'serif',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  quoteText: {
+    fontSize: 18,
+    lineHeight: 28,
+    color: '#1a1a1a',
+    fontStyle: 'italic',
+    marginBottom: 16,
+  },
+  author: {
+    fontSize: 14,
+    color: '#888888',
+    fontWeight: '500',
+  },
+  button: {
+    backgroundColor: '#1a1a1a',
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 12,
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
